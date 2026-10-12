@@ -16,6 +16,12 @@ build/
 coverage/
 .nyc_output/
 
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
 # 编辑器
 .vscode/
 .idea/

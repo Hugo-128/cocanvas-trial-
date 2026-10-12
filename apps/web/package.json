@@ -1,0 +1,38 @@
+{
+  "name": "@cocanvas/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CoCanvas 前端：React + Vite + TipTap + Yjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "node tests/e2e.mjs"
+  },
+  "dependencies": {
+    "@cocanvas/protocol": "workspace:*",
+    "@tiptap/core": "^2.27.3",
+    "@tiptap/extension-collaboration": "^2.27.3",
+    "@tiptap/extension-collaboration-cursor": "^2.26.2",
+    "@tiptap/pm": "^2.27.3",
+    "@tiptap/react": "^2.27.3",
+    "@tiptap/starter-kit": "^2.27.3",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "yjs": "^13.6.0"
+  },
+  "devDependencies": {
+    "@cocanvas/server": "workspace:*",
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.3"
+  }
+}

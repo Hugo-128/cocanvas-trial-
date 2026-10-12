@@ -1,0 +1,22 @@
+{
+  "name": "cocanvas",
+  "private": true,
+  "version": "0.1.0",
+  "description": "CoCanvas — 基于 CRDT (Yjs) 的多人实时协作文档编辑器",
+  "scripts": {
+    "dev:server": "pnpm --filter @cocanvas/server dev",
+    "dev:web": "pnpm --filter @cocanvas/web dev",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "test:e2e": "pnpm --filter @cocanvas/web test:e2e"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@12.11.2",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

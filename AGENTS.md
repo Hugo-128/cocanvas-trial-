@@ -12,10 +12,13 @@
 ## 0. 三十秒上手
 
 - **项目**：CoCanvas —— 基于 CRDT 的多人实时协作文档编辑器（TypeScript 全栈）
-- **位置**：`E:/programing/workbuddy/cocanvas`
-- **当前状态**：**Phase 0 未开始，零业务代码**（2026-10-11 建立）
-- **下一步**：Phase 0 —— pnpm monorepo 脚手架 + 两标签页实时同步的最小验证（见第 4 节）
-- **启动命令**：见第 6 节（环境注意事项，Windows 上有坑）
+- **位置**：`C:/programing/workbuddy/cocanvas`（2026-10-12 从 E: 迁入：E 盘是 exFAT，
+  pnpm 无法创建符号链接。paperscope 是 Python 项目不受影响，仍在 E:）
+- **当前状态**：**Phase 0 代码完成、已验证并已提交**（2026-10-12）：typecheck 3/3 包、
+  集成测试 6/6、E2E 4/4（含中文输入法 composition 回归）
+- **下一步**：commit Phase 0 → docker-compose / .env.example / CI → Phase 1 持久化。
+  续作清单与代码地图见 `docs/PROGRESS-2026-10-12.md`
+- **启动命令**：见第 6 节（环境注意事项，Windows 上有坑，2026-10-12 有大更新）
 - **用户偏好**：逐阶段推进，每阶段交付**可验证的测试命令**，不要一次性铺开全部代码；
   前端先用朴素实现，不追求美观；UI 细节后期迭代
 
@@ -232,12 +235,20 @@ awareness 会按 clientID 区分。
 
 ## 6. 环境注意事项（Windows 实测坑，先读再动手）
 
+> 2026-10-12 大更新：项目迁至 C 盘 + 一批本机限制被发现（详见 6.6-6.9）。
+
 ### 6.1 Node 与包管理
 
 - 本机 managed Node：`C:/Users/zzx/.workbuddy/binaries/node/versions/22.22.2-6/node.exe`（v22 LTS，够用）
 - shell 是 Git Bash；路径用正斜杠
 - pnpm 若未安装：`corepack enable` 后 `corepack prepare pnpm@latest --activate`（**不要 npm install -g**）
 - monorepo 内 `pnpm install` 在项目本地 node_modules，正常操作
+- **`pnpm install` 必须带 `--ignore-scripts`**：本机 Node 无法运行 esbuild 的
+  postinstall（spawn 限制，见 6.7）。二进制本身可用，跳过无副作用
+- **install 异常时的恢复手法**：若 `pnpm install` 报 "Already up to date"
+  却不装东西（lockfile 可能被写成空壳），执行：
+  `rm -rf node_modules apps/*/node_modules packages/*/node_modules pnpm-lock.yaml && pnpm install --ignore-scripts`
+  （store 在 `C:/.pnpm-store`，热的，1-2 秒完成）
 
 ### 6.2 Docker 与端口
 
@@ -250,7 +261,7 @@ awareness 会按 clientID 区分。
 
 - 本机 git 需要 `safe.directory` 例外（Windows 文件系统所有权问题，不加会报 dubious ownership）：
   ```
-  git config --global --add safe.directory "E:/programing/workbuddy/cocanvas"
+  git config --global --add safe.directory "C:/programing/workbuddy/cocanvas"
   ```
 - git identity 需用户配置真实姓名/邮箱（paperscope 那边目前是占位值）
 
@@ -267,6 +278,40 @@ ProseMirror 的 composition 事件与 Yjs 事务交互有历史问题：
 - Yjs 的 update 是二进制，调试时用 `Y.encodeStateAsUpdate` / `Y.applyUpdate` 在 Node 里复现，
   比开两个浏览器快得多。**冲突类 bug 的第一现场应该是 Node 脚本，不是浏览器**
 - `y-protocols` 的 sync 消息有固定格式，自己写 server 时对着协议源码读一遍
+
+### 6.6 项目必须在 C 盘（NTFS）
+
+**E 盘是 exFAT**：不支持 NTFS 符号链接/联接点/硬链接，pnpm 的 virtual store
+和 workspace 链接必然失败（`os error 1` / "函数不正确"）。2026-10-12 已把项目
+从 `E:/programing/workbuddy/cocanvas` 迁到 `C:/programing/workbuddy/cocanvas`。
+paperscope 是纯 Python 项目（无符号链接需求），留在 E: 不动。
+**任何 Node/TS 项目都不要放 E 盘。**
+
+### 6.7 本机 Node 无法创建 piped-stdio 子进程
+
+现象：Node 的 `child_process.spawn/fork` 带 pipe stdio 时返回 **EBUSY**
+（stdio 设为 inherit/ignore 的正常）。Python、bash 的 spawn 不受影响。
+影响面与规避：
+- esbuild postinstall → `pnpm install --ignore-scripts`（见 6.1）
+- playwright test **runner** 的 worker（fork）会静默卡死 → E2E 改为进程内
+  脚本 `apps/web/tests/e2e.mjs`（chromium.launch 不受影响）
+- 疑似会话级限制，用户自有终端大概率正常；在新环境先跑一个 spawn 探针再判断
+
+### 6.8 本机有 localhost 代理变量，访问本地服务要绕开
+
+环境变量 `HTTP_PROXY=HTTPS_PROXY=http://127.0.0.1:2155`。PowerShell /
+Node 的 HTTP 客户端请求 localhost 会走进代理挂起。规避：
+- curl：`--noproxy '*'`
+- 跑 E2E / 任何 Node HTTP 客户端前：`HTTP_PROXY= HTTPS_PROXY= http_proxy= https_proxy= NO_PROXY='*' <命令>`
+
+### 6.9 其他本机怪癖
+
+- Bash 工具（agent 会话内）间歇性路径解析失败：同一命令内首次文件操作随机
+  ENOENT，**重试即可**，不要怀疑文件不存在
+- ws 服务默认绑 127.0.0.1：浏览器端用 `ws://127.0.0.1:7001`，不要用
+  `localhost`（可能解析到 ::1 连不上）
+- Docker Desktop 需手动启动；paperscope 已占用 5432/6379/8000，
+  CoCanvas 用 5433/6380/7001/5173
 
 ---
 
