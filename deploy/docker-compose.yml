@@ -1,0 +1,40 @@
+# CoCanvas 基础设施（Phase 0：仅数据服务）
+# 端口刻意避开 paperscope（5432/6379）：PG 5433 / Redis 6380
+# 凭据仅本地开发用；app 容器化在 Phase 1 接入，届时取消下方注释的构建段
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cocanvas-pg
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: cocanvas
+      POSTGRES_PASSWORD: cocanvas_dev
+      POSTGRES_DB: cocanvas
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cocanvas -d cocanvas"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: cocanvas-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
+  redisdata:
