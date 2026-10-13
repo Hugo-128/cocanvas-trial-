@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --ignore-scripts
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Integration tests
+        run: pnpm --filter @cocanvas/web test
+
+      - name: Install Playwright chromium
+        run: pnpm --filter @cocanvas/web exec playwright install chromium --with-deps
+
+      - name: E2E tests
+        run: |
+          pnpm dev:server &
+          pnpm dev:web &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:7001/health > /dev/null && \
+            curl -sf http://127.0.0.1:5173 > /dev/null && break
+            sleep 2
+          done
+          pnpm test:e2e

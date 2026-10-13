@@ -1,5 +1,7 @@
 # CoCanvas
 
+[![CI](https://github.com/Hugo-128/cocanvas/actions/workflows/ci.yml/badge.svg)](https://github.com/Hugo-128/cocanvas/actions/workflows/ci.yml)
+
 基于 CRDT（Yjs）的多人实时协作文档编辑器。支持离线编辑与重连自动合并，
 服务端可水平扩展（多实例 + Redis Streams 广播），update 增量落库 + 阈值快照压缩。
 
@@ -22,6 +24,13 @@ pnpm install --ignore-scripts   # 必须带 --ignore-scripts（本机 Node spawn
 cd apps/server && pnpm dev      # ws 服务 :7001
 cd apps/web && pnpm dev         # 前端 :5173
 # 浏览器开两个标签页打开同一 URL，如 http://localhost:5173/#/doc/demo-1
+```
+
+配置项见 [`.env.example`](./.env.example)（不建 `.env` 也能跑，代码有同样的默认值）。
+Phase 1 数据服务（PostgreSQL 5433 / Redis 6380）：
+
+```bash
+docker compose -f deploy/docker-compose.yml up -d
 ```
 
 测试：
